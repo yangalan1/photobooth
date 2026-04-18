@@ -161,12 +161,6 @@ html, body {
   z-index: 20;
 }
 
-/* URL pill below viewfinder */
-#url-pill {
-  position: relative;
-  z-index: 10;
-}
-
 /* Booth screen polaroids — scattered around the frame */
 .booth-photo {
   position: absolute;
@@ -360,12 +354,42 @@ html, body {
 }
 #dl-btn:hover { background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.55); }
 
-/* Screen toggle hint */
-#toggle-hint {
-  position: fixed; bottom: 16px; left: 18px;
-  font-size: 0.5rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: rgba(0,0,0,0.15);
-  z-index: 1000;
+/* Keyboard hint below viewfinder */
+#kbd-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  z-index: 10;
+  position: relative;
+}
+.kbd-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.3);
+}
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border: 1px solid rgba(0,0,0,0.22);
+  border-bottom-width: 2.5px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: rgba(0,0,0,0.4);
+  background: rgba(255,255,255,0.7);
+  letter-spacing: 0;
+  line-height: 1;
+}
+.kbd-sep {
+  color: rgba(0,0,0,0.15);
+  font-size: 0.5rem;
 }
 </style>
 </head>
@@ -392,10 +416,21 @@ html, body {
       <div id="countdown-overlay"><div id="countdown-num">3</div></div>
     </div>
 
-    <!-- URL pill below -->
-    <div id="url-pill" class="pill-label">
-      find your photos at <strong>bit.ly/your-link</strong>
+    <div id="cam-label">Photo Booth</div>
+    <div id="kbd-hint">
+      <div class="kbd-group">
+        <span class="kbd">W</span>
+        <span>photo wall</span>
+      </div>
+      <span class="kbd-sep">|</span>
+      <div class="kbd-group">
+        <span class="kbd">B</span>
+        <span>/</span>
+        <span class="kbd">ESC</span>
+        <span>booth</span>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -423,7 +458,7 @@ html, body {
   <span id="shot-counter">0 shots</span>
   <button id="dl-btn" onclick="downloadAll()">⬇ download all</button>
 </div>
-<div id="toggle-hint">W — photo wall &nbsp;|&nbsp; B or ESC — booth</div>
+
 
 <!-- Boot -->
 <!-- Google Sign-in overlay -->
@@ -473,9 +508,6 @@ const shotCounter    = document.getElementById('shot-counter');
 const scatteredWrap  = document.getElementById('scattered-photos');
 const wallUrl        = document.getElementById('wall-url');
 
-// Set bit.ly link
-document.getElementById('url-pill').innerHTML =
-  `find your photos at <strong>${BITLY_LINK}</strong>`;
 wallUrl.innerHTML = `0 shots taken`;
 
 // ── State ─────────────────────────────────────────────────────────────
@@ -639,7 +671,7 @@ function addPhoto(dataURL) {
 
   // Update wall pill
   const mins = 0;
-  wallUrl.innerHTML = `${photoCount} shot${photoCount !== 1 ? 's' : ''} taken — find yours at <strong>${BITLY_LINK}</strong>`;
+  wallUrl.innerHTML = `${photoCount} shot${photoCount !== 1 ? 's' : ''} taken`;
 
   updateHUD();
 }
@@ -711,6 +743,15 @@ function updateScattered() {
     const yRange = Math.max(1, zone.y.max - zone.y.min);
     const x = zone.x.min + r1 * xRange;
     const y = zone.y.min + r2 * yRange;
+
+    // Avoid QR panel area: bottom-left corner (approx 180x200px)
+    const qrRight  = 20 + 162;  // left + panel width
+    const qrTop    = H - 20 - 192; // bottom anchor - panel height
+    const inQRZone = x < qrRight && y > qrTop;
+    if (inQRZone) {
+      // Nudge right if in QR zone
+      x = qrRight + 10 + seededRand(i * 3 + 99) * 60;
+    }
 
     const el = document.createElement('div');
     el.className = 'booth-photo';
