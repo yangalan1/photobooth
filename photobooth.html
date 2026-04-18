@@ -310,6 +310,34 @@ html, body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── QR panel ── */
+#qr-panel {
+  position: fixed;
+  bottom: 20px; left: 20px;
+  z-index: 300;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 14px 16px 12px;
+  backdrop-filter: blur(10px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+}
+#qr-panel.visible { display: flex; }
+#qr-code { width: 130px; height: 130px; }
+#qr-code canvas, #qr-code img { width: 130px !important; height: 130px !important; }
+#qr-label {
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.35);
+  text-align: center;
+  line-height: 1.8;
+}
+
 /* ── HUD ── */
 #hud {
   position: fixed; top: 16px; right: 18px;
@@ -385,6 +413,12 @@ html, body {
 </div>
 
 <!-- HUD -->
+<!-- QR code panel — shows album link after first upload -->
+<div id="qr-panel">
+  <div id="qr-code"></div>
+  <div id="qr-label">Scan to view<br>your photos</div>
+</div>
+
 <div id="hud">
   <span id="shot-counter">0 shots</span>
   <button id="dl-btn" onclick="downloadAll()">⬇ download all</button>
@@ -407,6 +441,7 @@ html, body {
 
 <canvas id="capture-canvas" style="display:none"></canvas>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script type="module">
 import { FaceDetector, HandLandmarker, FilesetResolver }
@@ -757,6 +792,34 @@ function rebuildConveyor(rowIdx) {
   }, 60);
 }
 
+// ── Album QR code ────────────────────────────────────────────────────
+let qrGenerated = false;
+function generateAlbumQR(url) {
+  if (qrGenerated) return;
+  qrGenerated = true;
+
+  const panel = document.getElementById('qr-panel');
+  const el    = document.getElementById('qr-code');
+  el.innerHTML = '';
+  panel.classList.add('visible');
+
+  try {
+    new QRCode(el, {
+      text: url,
+      width: 130, height: 130,
+      colorDark: '#1a1a1a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e) {
+    setTimeout(() => {
+      try {
+        new QRCode(el, { text: url, width: 130, height: 130, colorDark: '#1a1a1a', colorLight: '#ffffff' });
+      } catch(e2) { console.warn('QR failed:', e2); }
+    }, 600);
+  }
+}
+
 // ── Google Photos auth + upload ───────────────────────────────────────
 let gAccessToken  = null;
 let gAlbumId      = null;
@@ -794,12 +857,7 @@ async function ensureAlbum() {
       gAlbumId  = data.id;
       gAlbumUrl = data.productUrl;
       console.log('Album created:', gAlbumUrl);
-      // Update bit.ly pill with real album link
-      const shortUrl = gAlbumUrl;
-      document.getElementById('url-pill').innerHTML =
-        `find your photos at <strong>${BITLY_LINK}</strong>`;
-      wallUrl.innerHTML =
-        `${photoCount} shot${photoCount !== 1 ? 's' : ''} taken — find yours at <strong>${BITLY_LINK}</strong>`;
+      generateAlbumQR(gAlbumUrl);
     }
   } catch(e) { console.error('Album creation failed:', e); }
 }
