@@ -627,22 +627,21 @@ html, body {
     <div class="settings-section-title">Wall background color</div>
     <!-- Preset swatches -->
     <div class="frame-swatches" id="bg-swatches" style="margin-bottom:10px;"></div>
-    <!-- Hex input + custom color circle -->
-    <div style="display:flex;align-items:center;gap:8px;">
-      <input type="text" id="bg-hex-input" maxlength="7" placeholder="#f0ece4" value="#f0ece4"
-        style="flex:1;font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.08em;
+    <!-- Hex input row -->
+    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+      <input type="text" id="bg-hex-input" maxlength="7" placeholder="#F0ECE4" value="#F0ECE4"
+        style="flex:1;font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.08em;
                text-transform:uppercase;
-               border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:9px 12px;
+               border:1.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:9px 12px;
                background:rgba(0,0,0,0.03);color:rgba(0,0,0,0.55);outline:none;
                transition:border-color 0.15s;"
-        onfocus="this.style.borderColor='rgba(0,0,0,0.25)'"
+        onfocus="this.style.borderColor='rgba(0,0,0,0.3)'"
         onblur="this.style.borderColor='rgba(0,0,0,0.1)'"
         oninput="onBgHex(this.value)">
-      <!-- Custom color picker circle -->
-      <div title="Custom color"
-        style="position:relative;width:32px;height:32px;border-radius:50%;overflow:hidden;
-               border:1.5px solid rgba(0,0,0,0.12);flex-shrink:0;cursor:pointer;
-               background: conic-gradient(red,yellow,lime,cyan,blue,magenta,red);">
+      <!-- Custom swatch — shows current color, click to open picker -->
+      <div id="bg-custom-swatch" title="Custom color"
+        style="position:relative;width:38px;height:38px;border-radius:8px;overflow:hidden;
+               border:1.5px solid rgba(0,0,0,0.12);flex-shrink:0;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.1);">
         <input type="color" id="bg-color-input" value="#f0ece4"
           style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;"
           oninput="onBgColor(this.value)">
@@ -669,7 +668,25 @@ html, body {
 
   <div class="settings-section">
     <div class="settings-section-title">Polaroid frame color</div>
-    <div class="frame-swatches" id="frame-swatches"></div>
+    <div class="frame-swatches" id="frame-swatches" style="margin-bottom:10px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="text" id="frame-hex-input" maxlength="7" placeholder="#FFFFFF"
+        style="flex:1;font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.08em;
+               text-transform:uppercase;
+               border:1.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:9px 12px;
+               background:rgba(0,0,0,0.03);color:rgba(0,0,0,0.55);outline:none;
+               transition:border-color 0.15s;"
+        onfocus="this.style.borderColor='rgba(0,0,0,0.3)'"
+        onblur="this.style.borderColor='rgba(0,0,0,0.1)'"
+        oninput="onFrameHex(this.value)">
+      <div id="frame-custom-swatch" title="Custom frame color"
+        style="position:relative;width:38px;height:38px;border-radius:8px;overflow:hidden;
+               border:1.5px solid rgba(0,0,0,0.12);flex-shrink:0;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+        <input type="color" id="frame-color-input" value="#ffffff"
+          style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;"
+          oninput="onFrameColorPicker(this.value)">
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1296,30 +1313,23 @@ const PATTERNS = [
 
 // ── Background presets ───────────────────────────────────────────────
 const BG_COLORS = [
+  { color: '#d4a853', label: 'Gold'     },
+  { color: '#7a9e7e', label: 'Sage'     },
+  { color: '#2d4a9e', label: 'Navy'     },
+  { color: '#f2b8b8', label: 'Blush'    },
+  { color: '#e05c35', label: 'Terracotta'},
+  { color: '#2a2a2a', label: 'Charcoal' },
+  { color: '#f5efdc', label: 'Cream'    },
+  { color: '#a8d4d4', label: 'Teal'     },
+  { color: '#c9b89a', label: 'Sand'     },
   { color: '#f0ece4', label: 'Tan'      },
-  { color: '#ffffff', label: 'White'    },
-  { color: '#1a1a1a', label: 'Black'    },
-  { color: '#fce4ec', label: 'Blush'    },
-  { color: '#e8f5e9', label: 'Sage'     },
-  { color: '#e3f2fd', label: 'Sky'      },
-  { color: '#fff9c4', label: 'Butter'   },
-  { color: '#ede7f6', label: 'Lavender' },
-  { color: '#fbe9e7', label: 'Peach'    },
-  { color: '#212121', label: 'Charcoal' },
 ];
 
 // ── Frame presets ─────────────────────────────────────────────────────
 const FRAME_COLORS = [
-  { color: '#fdfaf4', label: 'Cream'   },
-  { color: '#ffffff', label: 'White'   },
-  { color: '#1a1a1a', label: 'Black'   },
-  { color: '#f5c6d0', label: 'Pink'    },
-  { color: '#c8e6c9', label: 'Mint'    },
-  { color: '#bbdefb', label: 'Blue'    },
-  { color: '#fff9c4', label: 'Yellow'  },
-  { color: '#e1bee7', label: 'Lavender'},
-  { color: '#ffccbc', label: 'Peach'   },
-  { color: '#b0bec5', label: 'Slate'   },
+  { color: '#ffffff', label: 'White' },
+  { color: '#f0ece4', label: 'Tan'   },
+  { color: '#1a1a1a', label: 'Black' },
 ];
 
 // ── Background canvas ─────────────────────────────────────────────────
@@ -1468,19 +1478,20 @@ function drawChecker(ctx, w, h, bg) {
 }
 
 function drawConfetti(ctx, w, h, bg) {
+  const confettiColor = complement(bg); // adapts to bg color
   const pieces = [
-    { x:0.12, y:0, size:10, color:'#ff6b9d', rot:15  },
-    { x:0.28, y:0, size:8,  color:'#a78bfa', rot:45  },
-    { x:0.45, y:0, size:12, color:'#34d399', rot:72  },
-    { x:0.61, y:0, size:9,  color:'#fbbf24', rot:30  },
-    { x:0.77, y:0, size:11, color:'#60a5fa', rot:60  },
-    { x:0.92, y:0, size:8,  color:'#f87171', rot:90  },
-    { x:0.05, y:0, size:10, color:'#818cf8', rot:20  },
-    { x:0.35, y:0, size:9,  color:'#fb923c', rot:55  },
-    { x:0.55, y:0, size:7,  color:'#a3e635', rot:80  },
-    { x:0.70, y:0, size:11, color:'#f472b6', rot:35  },
-    { x:0.85, y:0, size:8,  color:'#38bdf8', rot:65  },
-    { x:0.18, y:0, size:10, color:'#4ade80', rot:25  },
+    { x:0.12, y:0, size:10, rot:15  },
+    { x:0.28, y:0, size:8,  rot:45  },
+    { x:0.45, y:0, size:12, rot:72  },
+    { x:0.61, y:0, size:9,  rot:30  },
+    { x:0.77, y:0, size:11, rot:60  },
+    { x:0.92, y:0, size:8,  rot:90  },
+    { x:0.05, y:0, size:10, rot:20  },
+    { x:0.35, y:0, size:9,  rot:55  },
+    { x:0.55, y:0, size:7,  rot:80  },
+    { x:0.70, y:0, size:11, rot:35  },
+    { x:0.85, y:0, size:8,  rot:65  },
+    { x:0.18, y:0, size:10, rot:25  },
   ];
   const speed = 0.8;
   pieces.forEach((p, i) => {
@@ -1488,7 +1499,7 @@ function drawConfetti(ctx, w, h, bg) {
     ctx.save();
     ctx.translate(p.x * w, yt);
     ctx.rotate((p.rot + tick * 0.03 * (i % 2 === 0 ? 1 : -1)) * Math.PI / 180);
-    ctx.fillStyle = p.color;
+    ctx.fillStyle = confettiColor;
     ctx.globalAlpha = 0.75;
     ctx.fillRect(-p.size/2, -p.size/3, p.size, p.size*0.6);
     ctx.restore();
@@ -1647,6 +1658,13 @@ function buildSettingsUI() {
       applyFrameColor();
       swatchWrap.querySelectorAll('.frame-swatch').forEach(s => s.classList.remove('selected'));
       sw.classList.add('selected');
+      // Sync hex + custom swatch
+      const fHex = document.getElementById('frame-hex-input');
+      if (fHex) fHex.value = fc.color.toUpperCase();
+      const fSwatch = document.getElementById('frame-custom-swatch');
+      if (fSwatch) fSwatch.style.background = fc.color;
+      const fPicker = document.getElementById('frame-color-input');
+      if (fPicker) fPicker.value = fc.color;
     };
     swatchWrap.appendChild(sw);
   });
@@ -1657,19 +1675,27 @@ function buildSettingsUI() {
     animBtn.textContent = cfg.animate ? 'On' : 'Off';
     animBtn.style.background = cfg.animate ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)';
   }
-  // Sync hex input
+  // Sync bg hex + custom swatch
   const hexEl = document.getElementById('bg-hex-input');
-  if (hexEl) hexEl.value = cfg.bgColor;
+  if (hexEl) hexEl.value = cfg.bgColor.toUpperCase();
+  const bgCustom = document.getElementById('bg-custom-swatch');
+  if (bgCustom) bgCustom.style.background = cfg.bgColor;
+  // Sync frame hex + custom swatch
+  const fHexEl = document.getElementById('frame-hex-input');
+  if (fHexEl) fHexEl.value = cfg.frameColor.toUpperCase();
+  const fCustom = document.getElementById('frame-custom-swatch');
+  if (fCustom) fCustom.style.background = cfg.frameColor;
 }
 
 function onBgColor(val) {
   cfg.bgColor = val;
-  // Sync hidden picker
   const pickerEl = document.getElementById('bg-color-input');
   if (pickerEl) pickerEl.value = val;
-  // Sync hex input
   const hexEl = document.getElementById('bg-hex-input');
   if (hexEl && document.activeElement !== hexEl) hexEl.value = val.toUpperCase();
+  // Fill custom swatch with selected color
+  const customSwatch = document.getElementById('bg-custom-swatch');
+  if (customSwatch) customSwatch.style.background = val;
   saveConfig();
   startAnimation();
   buildBgSwatches();
@@ -1683,6 +1709,32 @@ function onBgHex(val) {
     document.getElementById('bg-color-input').value = cleaned;
     onBgColor(cleaned);
   }
+}
+
+function onFrameHex(val) {
+  const cleaned = val.startsWith('#') ? val : '#' + val;
+  if (/^#[0-9a-fA-F]{6}$/.test(cleaned)) {
+    cfg.frameColor = cleaned;
+    saveConfig();
+    applyFrameColor();
+    const pickerEl = document.getElementById('frame-color-input');
+    if (pickerEl) pickerEl.value = cleaned;
+    const swatch = document.getElementById('frame-custom-swatch');
+    if (swatch) swatch.style.background = cleaned;
+    // Deselect preset swatches
+    document.querySelectorAll('#frame-swatches .frame-swatch').forEach(s => s.classList.remove('selected'));
+  }
+}
+
+function onFrameColorPicker(val) {
+  cfg.frameColor = val;
+  saveConfig();
+  applyFrameColor();
+  const hexEl = document.getElementById('frame-hex-input');
+  if (hexEl) hexEl.value = val.toUpperCase();
+  const swatch = document.getElementById('frame-custom-swatch');
+  if (swatch) swatch.style.background = val;
+  document.querySelectorAll('#frame-swatches .frame-swatch').forEach(s => s.classList.remove('selected'));
 }
 
 function toggleAnim() {
@@ -1740,7 +1792,9 @@ document.addEventListener('keydown', e => {
 window.initGoogleAuth  = initGoogleAuth;
 window.toggleSettings  = toggleSettings;
 window.toggleAnim      = toggleAnim;
-window.buildBgSwatches  = buildBgSwatches;
+window.buildBgSwatches    = buildBgSwatches;
+window.onFrameHex         = onFrameHex;
+window.onFrameColorPicker = onFrameColorPicker;
 window.onBgHex         = onBgHex;
 window.buildSettingsUI = buildSettingsUI;
 window.onBgColor       = onBgColor;
