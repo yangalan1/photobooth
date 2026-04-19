@@ -1561,6 +1561,40 @@ function toggleSettings() {
   document.getElementById('settings-panel').classList.toggle('open');
 }
 
+function rebuildPatternThumbs() {
+  const grid = document.getElementById('pattern-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  PATTERNS.forEach(p => {
+    const thumb = document.createElement('div');
+    thumb.className = 'pattern-thumb' + (cfg.pattern === p.id ? ' selected' : '');
+    thumb.title = p.label;
+
+    const c = document.createElement('canvas');
+    c.width = 80; c.height = 80;
+    const pctx = c.getContext('2d');
+    // Fill with current bg color so preview matches
+    pctx.fillStyle = cfg.bgColor;
+    pctx.fillRect(0, 0, 80, 80);
+    if (p.id !== 'none') p.draw(pctx, 80, 80, cfg.bgColor, 30);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'p-label';
+    lbl.textContent = p.label;
+
+    thumb.appendChild(c);
+    thumb.appendChild(lbl);
+    thumb.onclick = () => {
+      cfg.pattern = p.id;
+      saveConfig();
+      startAnimation();
+      grid.querySelectorAll('.pattern-thumb').forEach(t => t.classList.remove('selected'));
+      thumb.classList.add('selected');
+    };
+    grid.appendChild(thumb);
+  });
+}
+
 function buildBgSwatches() {
   const wrap = document.getElementById('bg-swatches');
   if (!wrap) return;
@@ -1589,60 +1623,11 @@ function buildSettingsUI() {
   // Bg swatches
   buildBgSwatches();
 
-  // Pattern grid
-  const grid = document.getElementById('pattern-grid');
-  grid.innerHTML = '';
-  PATTERNS.forEach(p => {
-    const thumb = document.createElement('div');
-    thumb.className = 'pattern-thumb' + (cfg.pattern === p.id ? ' selected' : '');
-    thumb.title = p.label;
-
-    const c = document.createElement('canvas');
-    c.width = 80; c.height = 80;
-    const pctx = c.getContext('2d');
-    pctx.fillStyle = cfg.bgColor;
-    pctx.fillRect(0, 0, 80, 80);
-    if (p.id !== 'none') p.draw(pctx, 80, 80, cfg.bgColor, 30);
-
-    const lbl = document.createElement('div');
-    lbl.className = 'p-label';
-    lbl.textContent = p.label;
-
-    thumb.appendChild(c);
-    thumb.appendChild(lbl);
-    thumb.onclick = () => {
-      cfg.pattern = p.id;
-      saveConfig();
-      startAnimation();
-      // Update selected state
-      grid.querySelectorAll('.pattern-thumb').forEach(t => t.classList.remove('selected'));
-      thumb.classList.add('selected');
-    };
-    grid.appendChild(thumb);
-  });
+  rebuildPatternThumbs();
 
   // Frame swatches
   const swatchWrap = document.getElementById('frame-swatches');
   swatchWrap.innerHTML = '';
-
-  // Auto-complement swatch first
-  const autoSw = document.createElement('div');
-  autoSw.className = 'frame-swatch';
-  autoSw.id = 'auto-frame-swatch';
-  autoSw.style.position = 'relative';
-  autoSw.style.overflow = 'hidden';
-  // Draw "auto" label inside
-  autoSw.innerHTML = '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.38rem;letter-spacing:0.04em;text-transform:uppercase;font-family:DM Mono,monospace;opacity:0.6;pointer-events:none;">auto</span>';
-  autoSw.onclick = () => {
-    const color = autoSw.dataset.color || '#fdfaf4';
-    cfg.frameColor = color;
-    saveConfig();
-    applyFrameColor();
-    swatchWrap.querySelectorAll('.frame-swatch').forEach(s => s.classList.remove('selected'));
-    autoSw.classList.add('selected');
-  };
-  swatchWrap.appendChild(autoSw);
-  updateAutoSwatch();
 
   FRAME_COLORS.forEach(fc => {
     const sw = document.createElement('div');
@@ -1699,7 +1684,7 @@ function onBgColor(val) {
   saveConfig();
   startAnimation();
   buildBgSwatches();
-  updateAutoSwatch();
+  rebuildPatternThumbs();
 }
 
 function onBgHex(val) {
@@ -1746,23 +1731,6 @@ function toggleAnim() {
   startAnimation();
 }
 
-function updateAutoSwatch() {
-  // Auto-complement: pick frame color that contrasts bg
-  const { r, g, b } = hexToRgb(cfg.bgColor);
-  const lum = (r*299 + g*587 + b*114) / 1000;
-  // Pick a warm neutral that complements the bg
-  const autoColor = lum > 160
-    ? '#1a1a1a'    // dark bg needed → black frame
-    : lum > 80
-    ? '#fdfaf4'    // mid tones → cream frame
-    : '#f5f0e8';   // dark bg → off-white frame
-  const autoSwatch = document.getElementById('auto-frame-swatch');
-  if (autoSwatch) {
-    autoSwatch.style.background = autoColor;
-    autoSwatch.dataset.color    = autoColor;
-    autoSwatch.title = 'Auto (' + (lum > 160 ? 'Black' : 'Cream') + ')';
-  }
-}
 
 function applyFrameColor() {
   // Update all existing polaroids
