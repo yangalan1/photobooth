@@ -333,23 +333,7 @@ html, body {
   line-height: 1.8;
 }
 
-/* ── HUD ── */
-#hud {
-  position: fixed; top: 16px; right: 18px;
-  display: flex; align-items: center; gap: 10px;
-  z-index: 1000;
-}
-#dl-btn {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
-  color: rgba(0,0,0,0.3);
-  background: rgba(255,255,255,0.6);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 100px; padding: 5px 12px;
-  cursor: pointer; backdrop-filter: blur(8px);
-  transition: all 0.2s; display: none;
-}
-#dl-btn:hover { background: rgba(255,255,255,0.9); color: rgba(0,0,0,0.55); }
+
 
 /* Keyboard hint below viewfinder */
 #kbd-hint {
@@ -625,9 +609,7 @@ html, body {
   <div id="qr-label">Scan to view<br>your photos</div>
 </div>
 
-<div id="hud">
-  <button id="dl-btn" onclick="downloadAll()">⬇ download all</button>
-</div>
+
 
 
 <!-- Boot -->
@@ -643,18 +625,34 @@ html, body {
 
   <div class="settings-section">
     <div class="settings-section-title">Wall background color</div>
-    <div class="color-row">
-      <label>Background</label>
-      <div class="color-swatch-wrap" id="bg-swatch-wrap">
+    <div class="color-row" style="gap:8px;">
+      <div class="color-swatch-wrap" id="bg-swatch-wrap" style="flex-shrink:0;">
         <div class="color-preview" id="bg-color-preview"></div>
         <input type="color" id="bg-color-input" value="#e8e4db" oninput="onBgColor(this.value)">
       </div>
+      <input type="text" id="bg-hex-input" maxlength="7" placeholder="#e8e4db"
+        style="flex:1;font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.06em;
+               border:1px solid rgba(0,0,0,0.12);border-radius:8px;padding:8px 12px;
+               background:rgba(0,0,0,0.03);color:rgba(0,0,0,0.6);outline:none;"
+        oninput="onBgHex(this.value)">
     </div>
   </div>
 
   <div class="settings-section">
     <div class="settings-section-title">Wall pattern</div>
     <div class="pattern-grid" id="pattern-grid"></div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">Animations</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:0.68rem;letter-spacing:0.06em;color:rgba(0,0,0,0.5);">Pattern animations</span>
+      <button id="anim-toggle" onclick="toggleAnim()"
+        style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;
+               text-transform:uppercase;border:1px solid rgba(0,0,0,0.15);border-radius:100px;
+               padding:5px 14px;cursor:pointer;transition:all 0.2s;background:rgba(0,0,0,0.06);
+               color:rgba(0,0,0,0.45);">On</button>
+    </div>
   </div>
 
   <div class="settings-section">
@@ -896,8 +894,12 @@ function seededRand(seed) {
   return x - Math.floor(x);
 }
 
+// Track placed booth photo positions so we avoid overlap when possible
+let boothPhotoRects = [];
+
 function updateScattered() {
   scatteredWrap.innerHTML = '';
+  boothPhotoRects = [];
   const vf = document.getElementById('viewfinder').getBoundingClientRect();
   const recent = photos.slice(0, 16);
 
@@ -944,24 +946,44 @@ function updateScattered() {
     { x: horzX,  y: botY  },  // 7 bottom
   ];
 
-  recent.forEach((p, i) => {
-    const zone = zones[i % zones.length];
-    const r1   = seededRand(i * 7 + 1);
-    const r2   = seededRand(i * 7 + 2);
+  // Render oldest first (end of array), newest last (index 0) so newest is on top
+  const toRender = [...recent].reverse();
+
+  toRender.forEach((p, i) => {
+    const zIdx = i; // older = lower z, newer = higher z (rendered last = on top)
+    const actualIdx = recent.length - 1 - i; // map back to original seeded index
+    const zone = zones[actualIdx % zones.length];
+    const r1   = seededRand(actualIdx * 7 + 1);
+    const r2   = seededRand(actualIdx * 7 + 2);
 
     const xRange = Math.max(1, zone.x.max - zone.x.min);
     const yRange = Math.max(1, zone.y.max - zone.y.min);
-    const x = zone.x.min + r1 * xRange;
-    const y = zone.y.min + r2 * yRange;
+    let x = zone.x.min + r1 * xRange;
+    let y = zone.y.min + r2 * yRange;
 
-    // Avoid QR panel area: bottom-left corner (approx 180x200px)
-    const qrRight  = 20 + 162;  // left + panel width
-    const qrTop    = H - 20 - 192; // bottom anchor - panel height
-    const inQRZone = x < qrRight && y > qrTop;
-    if (inQRZone) {
-      // Nudge right if in QR zone
-      x = qrRight + 10 + seededRand(i * 3 + 99) * 60;
+    // Avoid QR panel area: bottom-left corner
+    const qrRight = 20 + 162;
+    const qrTop   = H - 20 - 192;
+    if (x < qrRight && y > qrTop) {
+      x = qrRight + 10 + seededRand(actualIdx * 3 + 99) * 60;
     }
+
+    // Try non-overlapping position — try up to 8 offsets within same zone
+    const myRect = { x, y, w: PW, h: PH };
+    let placed = false;
+    for (let attempt = 0; attempt < 8 && !placed; attempt++) {
+      const rx = zone.x.min + seededRand(actualIdx * 7 + attempt * 13 + 1) * xRange;
+      const ry = zone.y.min + seededRand(actualIdx * 7 + attempt * 13 + 2) * yRange;
+      const overlaps = boothPhotoRects.some(r =>
+        rx < r.x + r.w && rx + PW > r.x && ry < r.y + r.h && ry + PH > r.y
+      );
+      if (!overlaps || attempt === 7) {
+        myRect.x = rx; myRect.y = ry;
+        x = rx; y = ry;
+        placed = true;
+      }
+    }
+    boothPhotoRects.push(myRect);
 
     const el = document.createElement('div');
     el.className = 'booth-photo';
@@ -970,8 +992,9 @@ function updateScattered() {
       top:  ${y}px;
       transform: rotate(${p.rot}deg);
       animation: boothPhotoIn 0.45s cubic-bezier(0.34,1.5,0.64,1) both;
-      animation-delay: ${i * 0.04}s;
+      animation-delay: ${actualIdx * 0.04}s;
       background: ${cfg.frameColor};
+      z-index: ${20 + zIdx};
     `;
 
     const img = document.createElement('img');
@@ -1164,7 +1187,7 @@ function switchTo(screen) {
 
 document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
-  if (k === 'w') switchTo('wall');
+  if (k === 'w') switchTo(currentScreen === 'wall' ? 'booth' : 'wall');
   if (k === 'b' || k === 'escape') switchTo('booth');
 });
 
@@ -1212,7 +1235,7 @@ async function downloadAll() {
 window.downloadAll = downloadAll;
 
 function updateHUD() {
-  document.getElementById('dl-btn').style.display = photoCount > 0 ? 'block' : 'none';
+
 }
 
 // ── Booth photo pop-in animation ──────────────────────────────────────
@@ -1231,9 +1254,10 @@ document.head.appendChild(boothStyle);
 
 // Defaults (also saved to localStorage)
 let cfg = {
-  bgColor:   '#e8e4db',
-  pattern:   'none',
+  bgColor:    '#e8e4db',
+  pattern:    'none',
   frameColor: '#fdfaf4',
+  animate:    true,
 };
 
 // Load saved config
@@ -1303,7 +1327,7 @@ function renderBg() {
 function startAnimation() {
   if (animFrame2) cancelAnimationFrame(animFrame2);
   const pat = PATTERNS.find(p => p.id === cfg.pattern);
-  if (!pat || !pat.animated) { renderBg(); return; }
+  if (!pat || !pat.animated || !cfg.animate) { renderBg(); return; }
 
   function loop() {
     tick++;
@@ -1397,7 +1421,16 @@ function drawStar(ctx, cx, cy, r, R, points) {
 
 function drawChecker(ctx, w, h, bg) {
   const size = 48;
-  const accent = complement(bg);
+  // Use a solid computed color rather than rgba to avoid compositing glitches
+  const { r, g, b } = hexToRgb(bg);
+  const lum = (r*299 + g*587 + b*114) / 1000;
+  // Shift lightness: dark bg gets lighter squares, light bg gets darker
+  const shift = lum > 128 ? -28 : 28;
+  const cr = Math.min(255, Math.max(0, r + shift));
+  const cg = Math.min(255, Math.max(0, g + shift));
+  const cb = Math.min(255, Math.max(0, b + shift));
+  const accent = `rgb(${cr},${cg},${cb})`;
+  ctx.clearRect(0, 0, w, h); // clear first to avoid accumulation
   for (let xi = 0; xi < Math.ceil(w/size)+1; xi++) {
     for (let yi = 0; yi < Math.ceil(h/size)+1; yi++) {
       if ((xi + yi) % 2 === 0) {
@@ -1533,6 +1566,26 @@ function buildSettingsUI() {
   // Frame swatches
   const swatchWrap = document.getElementById('frame-swatches');
   swatchWrap.innerHTML = '';
+
+  // Auto-complement swatch first
+  const autoSw = document.createElement('div');
+  autoSw.className = 'frame-swatch';
+  autoSw.id = 'auto-frame-swatch';
+  autoSw.style.position = 'relative';
+  autoSw.style.overflow = 'hidden';
+  // Draw "auto" label inside
+  autoSw.innerHTML = '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.38rem;letter-spacing:0.04em;text-transform:uppercase;font-family:DM Mono,monospace;opacity:0.6;pointer-events:none;">auto</span>';
+  autoSw.onclick = () => {
+    const color = autoSw.dataset.color || '#fdfaf4';
+    cfg.frameColor = color;
+    saveConfig();
+    applyFrameColor();
+    swatchWrap.querySelectorAll('.frame-swatch').forEach(s => s.classList.remove('selected'));
+    autoSw.classList.add('selected');
+  };
+  swatchWrap.appendChild(autoSw);
+  updateAutoSwatch();
+
   FRAME_COLORS.forEach(fc => {
     const sw = document.createElement('div');
     sw.className = 'frame-swatch' + (cfg.frameColor === fc.color ? ' selected' : '');
@@ -1550,15 +1603,65 @@ function buildSettingsUI() {
     };
     swatchWrap.appendChild(sw);
   });
+
+  // Sync animation toggle
+  const animBtn = document.getElementById('anim-toggle');
+  if (animBtn) {
+    animBtn.textContent = cfg.animate ? 'On' : 'Off';
+    animBtn.style.background = cfg.animate ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)';
+  }
+  // Sync hex input
+  const hexEl = document.getElementById('bg-hex-input');
+  if (hexEl) hexEl.value = cfg.bgColor;
 }
 
 function onBgColor(val) {
   cfg.bgColor = val;
   document.getElementById('bg-color-preview').style.background = val;
+  // Sync hex input
+  const hexEl = document.getElementById('bg-hex-input');
+  if (hexEl && document.activeElement !== hexEl) hexEl.value = val;
   saveConfig();
-  // Rebuild pattern thumbnails with new bg color
   buildSettingsUI();
   startAnimation();
+  // Update auto-complement swatch
+  updateAutoSwatch();
+}
+
+function onBgHex(val) {
+  // Accept when valid 6-digit hex
+  const cleaned = val.startsWith('#') ? val : '#' + val;
+  if (/^#[0-9a-fA-F]{6}$/.test(cleaned)) {
+    document.getElementById('bg-color-input').value = cleaned;
+    onBgColor(cleaned);
+  }
+}
+
+function toggleAnim() {
+  cfg.animate = !cfg.animate;
+  saveConfig();
+  const btn = document.getElementById('anim-toggle');
+  btn.textContent = cfg.animate ? 'On' : 'Off';
+  btn.style.background = cfg.animate ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)';
+  startAnimation();
+}
+
+function updateAutoSwatch() {
+  // Auto-complement: pick frame color that contrasts bg
+  const { r, g, b } = hexToRgb(cfg.bgColor);
+  const lum = (r*299 + g*587 + b*114) / 1000;
+  // Pick a warm neutral that complements the bg
+  const autoColor = lum > 160
+    ? '#1a1a1a'    // dark bg needed → black frame
+    : lum > 80
+    ? '#fdfaf4'    // mid tones → cream frame
+    : '#f5f0e8';   // dark bg → off-white frame
+  const autoSwatch = document.getElementById('auto-frame-swatch');
+  if (autoSwatch) {
+    autoSwatch.style.background = autoColor;
+    autoSwatch.dataset.color    = autoColor;
+    autoSwatch.title = 'Auto (' + (lum > 160 ? 'Black' : 'Cream') + ')';
+  }
 }
 
 function applyFrameColor() {
@@ -1588,6 +1691,8 @@ document.addEventListener('keydown', e => {
 
 window.initGoogleAuth  = initGoogleAuth;
 window.toggleSettings  = toggleSettings;
+window.toggleAnim      = toggleAnim;
+window.onBgHex         = onBgHex;
 window.buildSettingsUI = buildSettingsUI;
 window.onBgColor       = onBgColor;
 window.downloadAll     = downloadAll;
