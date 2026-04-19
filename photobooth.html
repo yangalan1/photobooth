@@ -12,7 +12,7 @@
 html, body {
   width: 100%; height: 100%;
   overflow: hidden;
-  background: #f0ece4;
+  background: transparent;
   font-family: 'DM Mono', monospace;
 }
 
@@ -23,6 +23,7 @@ html, body {
   position: fixed; inset: 0;
   opacity: 0; pointer-events: none;
   transition: opacity 0.6s ease;
+  z-index: 1;
 }
 .screen.active {
   opacity: 1; pointer-events: all;
@@ -338,10 +339,6 @@ html, body {
   display: flex; align-items: center; gap: 10px;
   z-index: 1000;
 }
-#shot-counter {
-  font-size: 0.55rem; letter-spacing: 0.12em;
-  text-transform: uppercase; color: rgba(0,0,0,0.18);
-}
 #dl-btn {
   font-family: 'DM Mono', monospace;
   font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
@@ -474,15 +471,15 @@ html, body {
 }
 .color-swatch-wrap input[type=color] {
   position: absolute;
-  inset: -8px;
-  width: calc(100% + 16px);
-  height: calc(100% + 16px);
+  inset: 0;
+  width: 100%; height: 100%;
   border: none; padding: 0;
   cursor: pointer;
   opacity: 0;
 }
 .color-preview {
-  width: 100%; height: 100%;
+  position: absolute;
+  inset: 0;
   pointer-events: none;
 }
 
@@ -629,7 +626,6 @@ html, body {
 </div>
 
 <div id="hud">
-  <span id="shot-counter">0 shots</span>
   <button id="dl-btn" onclick="downloadAll()">⬇ download all</button>
 </div>
 
@@ -641,7 +637,7 @@ html, body {
 <!-- Settings panel -->
 <div id="settings-panel">
   <div id="settings-header">
-    <h2>Customise</h2>
+    <h2>Customize</h2>
     <button id="settings-close" onclick="toggleSettings()">✕</button>
   </div>
 
@@ -1216,7 +1212,6 @@ async function downloadAll() {
 window.downloadAll = downloadAll;
 
 function updateHUD() {
-  shotCounter.textContent = photoCount + (photoCount === 1 ? ' shot' : ' shots');
   document.getElementById('dl-btn').style.display = photoCount > 0 ? 'block' : 'none';
 }
 
@@ -1294,18 +1289,15 @@ function renderBg() {
   const w = bgCanvas.width, h = bgCanvas.height;
   bgCtx.clearRect(0, 0, w, h);
 
-  // Base color
-  bgCtx.fillStyle = cfg.bgColor;
-  bgCtx.fillRect(0, 0, w, h);
+  // Set body bg color directly — canvas draws patterns on top
+  document.body.style.background = cfg.bgColor;
 
-  // Pattern
+  // Clear canvas to transparent so body color shows through
+  bgCtx.clearRect(0, 0, w, h);
+
+  // Pattern drawn on top of body color
   const pat = PATTERNS.find(p => p.id === cfg.pattern);
   if (pat && pat.id !== 'none') pat.draw(bgCtx, w, h, cfg.bgColor, tick);
-
-  // Update body/screen backgrounds
-  document.getElementById('booth-screen').style.background = 'transparent';
-  document.getElementById('wall-screen').style.background  = 'transparent';
-  document.body.style.background = cfg.bgColor;
 }
 
 function startAnimation() {
@@ -1594,7 +1586,11 @@ document.addEventListener('keydown', e => {
 });
 
 
-window.initGoogleAuth = initGoogleAuth;
+window.initGoogleAuth  = initGoogleAuth;
+window.toggleSettings  = toggleSettings;
+window.buildSettingsUI = buildSettingsUI;
+window.onBgColor       = onBgColor;
+window.downloadAll     = downloadAll;
 window.addEventListener('load', () => { buildSettingsUI(); applyTheme(); init(); });
 </script>
 </body>
