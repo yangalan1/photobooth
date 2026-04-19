@@ -49,7 +49,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f0ece4;
+  background: transparent;
 }
 
 /* Polaroids scattered around - these are absolutely placed */
@@ -186,7 +186,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 0;
-  background: #f0ece4;
+  background: transparent;
 }
 
 #wall-title {
@@ -392,6 +392,180 @@ html, body {
   color: rgba(0,0,0,0.15);
   font-size: 0.5rem;
 }
+
+/* ════════════════════════════════════════
+   SETTINGS PANEL
+════════════════════════════════════════ */
+#settings-panel {
+  position: fixed;
+  top: 0; right: -380px;
+  width: 360px; height: 100%;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(0,0,0,0.08);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transition: right 0.35s cubic-bezier(0.34,1.2,0.64,1);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+#settings-panel.open { right: 0; }
+
+#settings-header {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+#settings-header h2 {
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.6);
+  font-weight: 500;
+}
+#settings-close {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.06);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; color: rgba(0,0,0,0.4);
+  transition: background 0.15s;
+}
+#settings-close:hover { background: rgba(0,0,0,0.12); }
+
+.settings-section {
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.settings-section-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.35);
+  margin-bottom: 12px;
+}
+
+/* Color picker row */
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.color-row label {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: rgba(0,0,0,0.5);
+  flex: 1;
+}
+.color-swatch-wrap {
+  position: relative;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.color-swatch-wrap input[type=color] {
+  position: absolute;
+  inset: -8px;
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
+  border: none; padding: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+.color-preview {
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+/* Pattern grid */
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.pattern-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s;
+  position: relative;
+}
+.pattern-thumb:hover { transform: scale(1.05); }
+.pattern-thumb.selected { border-color: rgba(0,0,0,0.5); }
+.pattern-thumb canvas {
+  width: 100%; height: 100%;
+  display: block;
+}
+.pattern-thumb .p-label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  font-size: 0.42rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 3px 2px;
+}
+
+/* Frame color swatches */
+.frame-swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.frame-swatch {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+.frame-swatch:hover { transform: scale(1.1); }
+.frame-swatch.selected { border-color: rgba(0,0,0,0.5); }
+
+/* S key hint */
+#settings-hint {
+  position: fixed;
+  top: 16px; left: 18px;
+  z-index: 400;
+}
+#settings-hint .kbd { cursor: pointer; }
+
+/* Background canvas (renders pattern) */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Animated pattern overlays */
+@keyframes confettiFall {
+  from { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  to   { transform: translateY(110vh) rotate(720deg); opacity: 0.6; }
+}
+@keyframes starTwinkle {
+  0%,100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.3); }
+}
+@keyframes dotPulse {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
 </style>
 </head>
 <body>
@@ -461,6 +635,46 @@ html, body {
 
 
 <!-- Boot -->
+<!-- Background canvas for patterns -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Settings panel -->
+<div id="settings-panel">
+  <div id="settings-header">
+    <h2>Customise</h2>
+    <button id="settings-close" onclick="toggleSettings()">✕</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">Wall background color</div>
+    <div class="color-row">
+      <label>Background</label>
+      <div class="color-swatch-wrap" id="bg-swatch-wrap">
+        <div class="color-preview" id="bg-color-preview"></div>
+        <input type="color" id="bg-color-input" value="#e8e4db" oninput="onBgColor(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">Wall pattern</div>
+    <div class="pattern-grid" id="pattern-grid"></div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">Polaroid frame color</div>
+    <div class="frame-swatches" id="frame-swatches"></div>
+  </div>
+</div>
+
+<!-- S key hint -->
+<div id="settings-hint">
+  <div class="kbd-group pill-label" style="gap:6px;padding:7px 14px;">
+    <span class="kbd" onclick="toggleSettings()" style="cursor:pointer;">S</span>
+    <span style="font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:rgba(0,0,0,0.3);">settings</span>
+  </div>
+</div>
+
 <!-- Google Sign-in overlay -->
 <div id="signin-overlay">
   <div id="signin-title">Photo Booth</div>
@@ -761,6 +975,7 @@ function updateScattered() {
       transform: rotate(${p.rot}deg);
       animation: boothPhotoIn 0.45s cubic-bezier(0.34,1.5,0.64,1) both;
       animation-delay: ${i * 0.04}s;
+      background: ${cfg.frameColor};
     `;
 
     const img = document.createElement('img');
@@ -797,6 +1012,7 @@ function rebuildConveyor(rowIdx) {
     // Random vertical offset per card so they look scattered, not grid-like
     const dy = (seededRand(idx * 13 + rowIdx * 77) - 0.5) * 60;
     el.style.transform = `rotate(${p.rot}deg) translateY(${dy}px)`;
+    el.style.background = cfg.frameColor;
     const img = document.createElement('img');
     img.src = p.dataURL;
     el.appendChild(img);
@@ -1013,8 +1229,373 @@ boothStyle.textContent = `
 }`;
 document.head.appendChild(boothStyle);
 
+
+// ══════════════════════════════════════════════════════════════════════
+//  SETTINGS — background color, patterns, frame colors
+// ══════════════════════════════════════════════════════════════════════
+
+// Defaults (also saved to localStorage)
+let cfg = {
+  bgColor:   '#e8e4db',
+  pattern:   'none',
+  frameColor: '#fdfaf4',
+};
+
+// Load saved config
+try {
+  const saved = localStorage.getItem('pb_cfg');
+  if (saved) cfg = { ...cfg, ...JSON.parse(saved) };
+} catch(e) {}
+
+function saveConfig() {
+  try { localStorage.setItem('pb_cfg', JSON.stringify(cfg)); } catch(e) {}
+}
+
+// ── Patterns ──────────────────────────────────────────────────────────
+const PATTERNS = [
+  { id: 'none',       label: 'None',       draw: drawNone,       animated: false },
+  { id: 'dots',       label: 'Polka dots', draw: drawDots,       animated: true  },
+  { id: 'gingham',    label: 'Gingham',    draw: drawGingham,    animated: false },
+  { id: 'stars',      label: 'Stars',      draw: drawStars,      animated: true  },
+  { id: 'checker',    label: 'Checker',    draw: drawChecker,    animated: false },
+  { id: 'confetti',   label: 'Confetti',   draw: drawConfetti,   animated: true  },
+  { id: 'linen',      label: 'Linen',      draw: drawLinen,      animated: false },
+  { id: 'floral',     label: 'Floral',     draw: drawFloral,     animated: false },
+];
+
+// ── Frame presets ─────────────────────────────────────────────────────
+const FRAME_COLORS = [
+  { color: '#fdfaf4', label: 'Cream'   },
+  { color: '#ffffff', label: 'White'   },
+  { color: '#1a1a1a', label: 'Black'   },
+  { color: '#f5c6d0', label: 'Pink'    },
+  { color: '#c8e6c9', label: 'Mint'    },
+  { color: '#bbdefb', label: 'Blue'    },
+  { color: '#fff9c4', label: 'Yellow'  },
+  { color: '#e1bee7', label: 'Lavender'},
+  { color: '#ffccbc', label: 'Peach'   },
+  { color: '#b0bec5', label: 'Slate'   },
+];
+
+// ── Background canvas ─────────────────────────────────────────────────
+const bgCanvas = document.getElementById('bg-canvas');
+const bgCtx    = bgCanvas.getContext('2d');
+let animFrame2 = null;
+let tick = 0;
+
+function resizeBgCanvas() {
+  bgCanvas.width  = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+  renderBg();
+}
+window.addEventListener('resize', resizeBgCanvas);
+
+function renderBg() {
+  const w = bgCanvas.width, h = bgCanvas.height;
+  bgCtx.clearRect(0, 0, w, h);
+
+  // Base color
+  bgCtx.fillStyle = cfg.bgColor;
+  bgCtx.fillRect(0, 0, w, h);
+
+  // Pattern
+  const pat = PATTERNS.find(p => p.id === cfg.pattern);
+  if (pat && pat.id !== 'none') pat.draw(bgCtx, w, h, cfg.bgColor, tick);
+
+  // Update body/screen backgrounds
+  document.getElementById('booth-screen').style.background = 'transparent';
+  document.getElementById('wall-screen').style.background  = 'transparent';
+  document.body.style.background = cfg.bgColor;
+}
+
+function startAnimation() {
+  if (animFrame2) cancelAnimationFrame(animFrame2);
+  const pat = PATTERNS.find(p => p.id === cfg.pattern);
+  if (!pat || !pat.animated) { renderBg(); return; }
+
+  function loop() {
+    tick++;
+    renderBg();
+    animFrame2 = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// ── Pattern draw functions ────────────────────────────────────────────
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return { r, g, b };
+}
+function darken(hex, amt=0.12) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${Math.max(0,r-r*amt)|0},${Math.max(0,g-g*amt)|0},${Math.max(0,b-b*amt)|0},0.35)`;
+}
+function complement(hex) {
+  // Pick a contrasting accent color based on luminance
+  const { r, g, b } = hexToRgb(hex);
+  const lum = (r*299 + g*587 + b*114) / 1000;
+  return lum > 128 ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.22)';
+}
+
+function drawNone() {}
+
+function drawDots(ctx, w, h, bg) {
+  const spacing = 38;
+  const r = 5;
+  ctx.fillStyle = complement(bg);
+  const t = tick * 0.02;
+  for (let x = spacing/2; x < w + spacing; x += spacing) {
+    for (let y = spacing/2; y < h + spacing; y += spacing) {
+      const pulse = 1 + Math.sin(t + (x + y) * 0.04) * 0.15;
+      ctx.beginPath();
+      ctx.arc(x, y, r * pulse, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+function drawGingham(ctx, w, h, bg) {
+  const size = 40;
+  const accent = complement(bg);
+  // Horizontal stripes
+  for (let y = 0; y < h + size; y += size) {
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.25;
+    ctx.fillRect(0, y, w, size/2);
+  }
+  // Vertical stripes
+  for (let x = 0; x < w + size; x += size) {
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.25;
+    ctx.fillRect(x, 0, size/2, h);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawStars(ctx, w, h, bg) {
+  const spacing = 55;
+  const t = tick * 0.03;
+  ctx.fillStyle = complement(bg);
+  for (let xi = 0; xi < Math.ceil(w/spacing)+1; xi++) {
+    for (let yi = 0; yi < Math.ceil(h/spacing)+1; yi++) {
+      const x = xi * spacing + (yi % 2) * spacing/2;
+      const y = yi * spacing;
+      const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(t + xi * 1.3 + yi * 0.9));
+      ctx.globalAlpha = twinkle;
+      drawStar(ctx, x, y, 5, 11, 5);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawStar(ctx, cx, cy, r, R, points) {
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const angle = (i * Math.PI) / points - Math.PI / 2;
+    const rad = i % 2 === 0 ? R : r;
+    const x = cx + rad * Math.cos(angle);
+    const y = cy + rad * Math.sin(angle);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawChecker(ctx, w, h, bg) {
+  const size = 48;
+  const accent = complement(bg);
+  for (let xi = 0; xi < Math.ceil(w/size)+1; xi++) {
+    for (let yi = 0; yi < Math.ceil(h/size)+1; yi++) {
+      if ((xi + yi) % 2 === 0) {
+        ctx.fillStyle = accent;
+        ctx.fillRect(xi*size, yi*size, size, size);
+      }
+    }
+  }
+}
+
+function drawConfetti(ctx, w, h, bg) {
+  const pieces = [
+    { x:0.12, y:0, size:10, color:'#ff6b9d', rot:15  },
+    { x:0.28, y:0, size:8,  color:'#a78bfa', rot:45  },
+    { x:0.45, y:0, size:12, color:'#34d399', rot:72  },
+    { x:0.61, y:0, size:9,  color:'#fbbf24', rot:30  },
+    { x:0.77, y:0, size:11, color:'#60a5fa', rot:60  },
+    { x:0.92, y:0, size:8,  color:'#f87171', rot:90  },
+    { x:0.05, y:0, size:10, color:'#818cf8', rot:20  },
+    { x:0.35, y:0, size:9,  color:'#fb923c', rot:55  },
+    { x:0.55, y:0, size:7,  color:'#a3e635', rot:80  },
+    { x:0.70, y:0, size:11, color:'#f472b6', rot:35  },
+    { x:0.85, y:0, size:8,  color:'#38bdf8', rot:65  },
+    { x:0.18, y:0, size:10, color:'#4ade80', rot:25  },
+  ];
+  const speed = 0.8;
+  pieces.forEach((p, i) => {
+    const yt = ((tick * speed + i * (h / pieces.length) * 1.5) % (h + 60)) - 30;
+    ctx.save();
+    ctx.translate(p.x * w, yt);
+    ctx.rotate((p.rot + tick * 0.03 * (i % 2 === 0 ? 1 : -1)) * Math.PI / 180);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = 0.75;
+    ctx.fillRect(-p.size/2, -p.size/3, p.size, p.size*0.6);
+    ctx.restore();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawLinen(ctx, w, h, bg) {
+  // Subtle crosshatch texture
+  const c = complement(bg);
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 0.5;
+  ctx.globalAlpha = 0.18;
+  const spacing = 6;
+  for (let x = 0; x < w; x += spacing) {
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+  }
+  for (let y = 0; y < h; y += spacing) {
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawFloral(ctx, w, h, bg) {
+  const spacing = 70;
+  ctx.fillStyle = complement(bg);
+  for (let xi = 0; xi < Math.ceil(w/spacing)+1; xi++) {
+    for (let yi = 0; yi < Math.ceil(h/spacing)+1; yi++) {
+      const x = xi * spacing + (yi % 2) * spacing * 0.5;
+      const y = yi * spacing;
+      drawFlower(ctx, x, y, 14);
+    }
+  }
+}
+
+function drawFlower(ctx, cx, cy, r) {
+  const petals = 5;
+  ctx.globalAlpha = 0.25;
+  for (let i = 0; i < petals; i++) {
+    const angle = (i / petals) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.ellipse(
+      cx + Math.cos(angle) * r * 0.6,
+      cy + Math.sin(angle) * r * 0.6,
+      r * 0.5, r * 0.28, angle, 0, Math.PI * 2
+    );
+    ctx.fill();
+  }
+  // Center dot
+  ctx.globalAlpha = 0.35;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+// ── Settings panel ────────────────────────────────────────────────────
+function toggleSettings() {
+  document.getElementById('settings-panel').classList.toggle('open');
+}
+
+function buildSettingsUI() {
+  // Color preview
+  const bgInput = document.getElementById('bg-color-input');
+  const bgPreview = document.getElementById('bg-color-preview');
+  bgInput.value = cfg.bgColor;
+  bgPreview.style.background = cfg.bgColor;
+
+  // Pattern grid
+  const grid = document.getElementById('pattern-grid');
+  grid.innerHTML = '';
+  PATTERNS.forEach(p => {
+    const thumb = document.createElement('div');
+    thumb.className = 'pattern-thumb' + (cfg.pattern === p.id ? ' selected' : '');
+    thumb.title = p.label;
+
+    const c = document.createElement('canvas');
+    c.width = 80; c.height = 80;
+    const pctx = c.getContext('2d');
+    pctx.fillStyle = cfg.bgColor;
+    pctx.fillRect(0, 0, 80, 80);
+    if (p.id !== 'none') p.draw(pctx, 80, 80, cfg.bgColor, 30);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'p-label';
+    lbl.textContent = p.label;
+
+    thumb.appendChild(c);
+    thumb.appendChild(lbl);
+    thumb.onclick = () => {
+      cfg.pattern = p.id;
+      saveConfig();
+      startAnimation();
+      // Update selected state
+      grid.querySelectorAll('.pattern-thumb').forEach(t => t.classList.remove('selected'));
+      thumb.classList.add('selected');
+    };
+    grid.appendChild(thumb);
+  });
+
+  // Frame swatches
+  const swatchWrap = document.getElementById('frame-swatches');
+  swatchWrap.innerHTML = '';
+  FRAME_COLORS.forEach(fc => {
+    const sw = document.createElement('div');
+    sw.className = 'frame-swatch' + (cfg.frameColor === fc.color ? ' selected' : '');
+    sw.style.background = fc.color;
+    sw.title = fc.label;
+    if (fc.color === '#ffffff' || fc.color === '#fdfaf4') {
+      sw.style.border = '2px solid rgba(0,0,0,0.12)';
+    }
+    sw.onclick = () => {
+      cfg.frameColor = fc.color;
+      saveConfig();
+      applyFrameColor();
+      swatchWrap.querySelectorAll('.frame-swatch').forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+    };
+    swatchWrap.appendChild(sw);
+  });
+}
+
+function onBgColor(val) {
+  cfg.bgColor = val;
+  document.getElementById('bg-color-preview').style.background = val;
+  saveConfig();
+  // Rebuild pattern thumbnails with new bg color
+  buildSettingsUI();
+  startAnimation();
+}
+
+function applyFrameColor() {
+  // Update all existing polaroids
+  document.querySelectorAll('.booth-photo, .wall-photo').forEach(el => {
+    el.style.background = cfg.frameColor;
+    // Auto-pick label color based on frame brightness
+    const { r, g, b } = hexToRgb(cfg.frameColor);
+    const lum = (r*299 + g*587 + b*114) / 1000;
+    const textColor = lum > 128 ? '#aaa' : 'rgba(255,255,255,0.5)';
+    const label = el.querySelector('.photo-ts, .p-time');
+    if (label) label.style.color = textColor;
+  });
+}
+
+function applyTheme() {
+  resizeBgCanvas();
+  startAnimation();
+  applyFrameColor();
+}
+
+// ── Key S to open settings ────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 's' && !e.metaKey && !e.ctrlKey) toggleSettings();
+});
+
+
 window.initGoogleAuth = initGoogleAuth;
-window.addEventListener('load', init);
+window.addEventListener('load', () => { buildSettingsUI(); applyTheme(); init(); });
 </script>
 </body>
 </html>
