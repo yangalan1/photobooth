@@ -625,16 +625,28 @@ html, body {
 
   <div class="settings-section">
     <div class="settings-section-title">Wall background color</div>
-    <div class="color-row" style="gap:8px;">
-      <div class="color-swatch-wrap" id="bg-swatch-wrap" style="flex-shrink:0;">
-        <div class="color-preview" id="bg-color-preview"></div>
-        <input type="color" id="bg-color-input" value="#e8e4db" oninput="onBgColor(this.value)">
-      </div>
-      <input type="text" id="bg-hex-input" maxlength="7" placeholder="#e8e4db"
-        style="flex:1;font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.06em;
-               border:1px solid rgba(0,0,0,0.12);border-radius:8px;padding:8px 12px;
-               background:rgba(0,0,0,0.03);color:rgba(0,0,0,0.6);outline:none;"
+    <!-- Preset swatches -->
+    <div class="frame-swatches" id="bg-swatches" style="margin-bottom:10px;"></div>
+    <!-- Hex input + custom color circle -->
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="text" id="bg-hex-input" maxlength="7" placeholder="#f0ece4" value="#f0ece4"
+        style="flex:1;font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.08em;
+               text-transform:uppercase;
+               border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:9px 12px;
+               background:rgba(0,0,0,0.03);color:rgba(0,0,0,0.55);outline:none;
+               transition:border-color 0.15s;"
+        onfocus="this.style.borderColor='rgba(0,0,0,0.25)'"
+        onblur="this.style.borderColor='rgba(0,0,0,0.1)'"
         oninput="onBgHex(this.value)">
+      <!-- Custom color picker circle -->
+      <div title="Custom color"
+        style="position:relative;width:32px;height:32px;border-radius:50%;overflow:hidden;
+               border:1.5px solid rgba(0,0,0,0.12);flex-shrink:0;cursor:pointer;
+               background: conic-gradient(red,yellow,lime,cyan,blue,magenta,red);">
+        <input type="color" id="bg-color-input" value="#f0ece4"
+          style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;"
+          oninput="onBgColor(this.value)">
+      </div>
     </div>
   </div>
 
@@ -1254,7 +1266,7 @@ document.head.appendChild(boothStyle);
 
 // Defaults (also saved to localStorage)
 let cfg = {
-  bgColor:    '#e8e4db',
+  bgColor:    '#f0ece4',
   pattern:    'none',
   frameColor: '#fdfaf4',
   animate:    true,
@@ -1280,6 +1292,20 @@ const PATTERNS = [
   { id: 'confetti',   label: 'Confetti',   draw: drawConfetti,   animated: true  },
   { id: 'linen',      label: 'Linen',      draw: drawLinen,      animated: false },
   { id: 'floral',     label: 'Floral',     draw: drawFloral,     animated: false },
+];
+
+// ── Background presets ───────────────────────────────────────────────
+const BG_COLORS = [
+  { color: '#f0ece4', label: 'Tan'      },
+  { color: '#ffffff', label: 'White'    },
+  { color: '#1a1a1a', label: 'Black'    },
+  { color: '#fce4ec', label: 'Blush'    },
+  { color: '#e8f5e9', label: 'Sage'     },
+  { color: '#e3f2fd', label: 'Sky'      },
+  { color: '#fff9c4', label: 'Butter'   },
+  { color: '#ede7f6', label: 'Lavender' },
+  { color: '#fbe9e7', label: 'Peach'    },
+  { color: '#212121', label: 'Charcoal' },
 ];
 
 // ── Frame presets ─────────────────────────────────────────────────────
@@ -1524,12 +1550,33 @@ function toggleSettings() {
   document.getElementById('settings-panel').classList.toggle('open');
 }
 
+function buildBgSwatches() {
+  const wrap = document.getElementById('bg-swatches');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  BG_COLORS.forEach(bc => {
+    const sw = document.createElement('div');
+    sw.className = 'frame-swatch' + (cfg.bgColor === bc.color ? ' selected' : '');
+    sw.style.background = bc.color;
+    sw.title = bc.label;
+    if (bc.color === '#ffffff' || bc.color === '#f0ece4') {
+      sw.style.border = '2px solid rgba(0,0,0,0.12)';
+    }
+    sw.onclick = () => {
+      onBgColor(bc.color);
+      wrap.querySelectorAll('.frame-swatch').forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+    };
+    wrap.appendChild(sw);
+  });
+}
+
 function buildSettingsUI() {
-  // Color preview
+  // Sync hidden color input
   const bgInput = document.getElementById('bg-color-input');
-  const bgPreview = document.getElementById('bg-color-preview');
-  bgInput.value = cfg.bgColor;
-  bgPreview.style.background = cfg.bgColor;
+  if (bgInput) bgInput.value = cfg.bgColor;
+  // Bg swatches
+  buildBgSwatches();
 
   // Pattern grid
   const grid = document.getElementById('pattern-grid');
@@ -1617,14 +1664,15 @@ function buildSettingsUI() {
 
 function onBgColor(val) {
   cfg.bgColor = val;
-  document.getElementById('bg-color-preview').style.background = val;
+  // Sync hidden picker
+  const pickerEl = document.getElementById('bg-color-input');
+  if (pickerEl) pickerEl.value = val;
   // Sync hex input
   const hexEl = document.getElementById('bg-hex-input');
-  if (hexEl && document.activeElement !== hexEl) hexEl.value = val;
+  if (hexEl && document.activeElement !== hexEl) hexEl.value = val.toUpperCase();
   saveConfig();
-  buildSettingsUI();
   startAnimation();
-  // Update auto-complement swatch
+  buildBgSwatches();
   updateAutoSwatch();
 }
 
@@ -1692,6 +1740,7 @@ document.addEventListener('keydown', e => {
 window.initGoogleAuth  = initGoogleAuth;
 window.toggleSettings  = toggleSettings;
 window.toggleAnim      = toggleAnim;
+window.buildBgSwatches  = buildBgSwatches;
 window.onBgHex         = onBgHex;
 window.buildSettingsUI = buildSettingsUI;
 window.onBgColor       = onBgColor;
